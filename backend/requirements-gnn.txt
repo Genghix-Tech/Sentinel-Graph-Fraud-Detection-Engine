@@ -1,0 +1,4 @@
+# Optional: GraphSAGE via PyTorch Geometric. Without these, an SGC-style fallback is used.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1
+torch_geometric==2.6.1
