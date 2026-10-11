@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SentinelGraph Case Study</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: #1f1f1d; font-size: 10.5pt; line-height: 1.55; margin: 0; }
+  .cover { width: 100%; border-radius: 8px; margin-bottom: 14px; }
+  h1 { font-size: 24pt; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { font-size: 12.5pt; color: #52514e; margin: 0 0 12px; }
+  .hook { border-left: 4px solid #2a78d6; padding: 4px 0 4px 12px; font-size: 12pt; font-weight: 600; margin: 0 0 14px; }
+  h2 { break-after: avoid; font-size: 13.5pt; margin: 20px 0 6px; color: #0b0b0b; border-bottom: 1px solid #e1e0d9; padding-bottom: 4px; }
+  p { margin: 0 0 8px; }
+  ol, ul { margin: 0 0 8px; padding-left: 20px; }
+  li { margin: 0 0 4px; }
+  .kpis { display: flex; gap: 10px; margin: 10px 0 4px; }
+  .kpi { flex: 1; border: 1px solid #e1e0d9; border-radius: 8px; padding: 9px 12px; background: #f9f9f7; }
+  .kpi b { display: block; font-size: 16pt; color: #0b0b0b; }
+  .kpi span { font-size: 9pt; color: #52514e; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 8px; font-size: 10pt; }
+  th { text-align: left; color: #52514e; font-weight: 600; border-bottom: 1.5px solid #c3c2b7; padding: 6px 8px; }
+  td { border-bottom: 1px solid #e1e0d9; padding: 6px 8px; }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { font-weight: 700; background: #eef4fc; }
+  figure { margin: 10px 0 4px; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #e1e0d9; border-radius: 6px; }
+  figcaption { font-size: 9pt; color: #52514e; margin-top: 4px; }
+  .note { font-size: 9pt; color: #52514e; font-style: italic; }
+  .stack { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stack span { font-size: 9pt; padding: 3px 9px; border-radius: 999px; background: #eef4fc; border: 1px solid #b7d3f6; color: #184f95; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; background: #f3f2ef; padding: 1px 4px; border-radius: 3px; }
+  .pb { break-before: page; }
+  .avoid { break-inside: avoid; }
+</style>
+</head>
+<body>
+<img class="cover" src="screenshots/00-cover.png" alt="SentinelGraph cover">
+<h2>The problem</h2>
+<p>Most fraud models score each transaction on its own: amount, time, location, velocity. Organised fraud doesn't look suspicious one transaction at a time. A fraud ring of "aged" accounts making ordinary-sized purchases passes every individual check. What gives it away is the <b>network</b>: the same devices, stolen cards and drop-shipping addresses reused across many accounts.</p>
+
+<h2>The solution</h2>
+<p>SentinelGraph builds a live graph of accounts and the entities they use, and combines three detectors:</p>
+<ol>
+  <li><b>XGBoost</b> on 40 behavioural and graph features, such as how many accounts share a device, how big an account's linked cluster is, and how many linked accounts already have confirmed fraud.</li>
+  <li>A <b>GraphSAGE graph neural network</b> (PyTorch Geometric) that learns risk from each account's neighbourhood.</li>
+  <li><b>Isolation Forest</b> anomaly detection for patterns no one has labelled yet.</li>
+</ol>
+<p>Every alert comes with <b>SHAP-based reasons</b>, a written case narrative, model-by-model signals, an interactive linked-entity graph and a chronological investigation timeline. When an analyst confirms or dismisses an alert, the decision immediately updates live scoring for every linked account and is used to train the next model version.</p>
+
+<figure><img src="screenshots/05-linked-entity-graph.png" alt=""><figcaption>Linked-entity graph: a newly detected fraud ring (orange) connected to three previously confirmed rings (red) through recycled devices.</figcaption></figure>
+<figure><img src="screenshots/04-explainable-alert.png" alt=""><figcaption>Explainable alert: SHAP contributing factors, a plain-English case narrative, analyst decision and model signals.</figcaption></figure>
+
+<h2 class="pb">Engineering highlights</h2>
+<ul>
+  <li><b>Leakage-free evaluation.</b> Graph features are computed <i>point in time</i>, so each transaction only sees links that existed when it happened. Fraud labels arrive with a realistic 10-day chargeback delay, and the split is by time, not random.</li>
+  <li><b>One feature pipeline for training and serving</b>, so there's no training/serving skew.</li>
+  <li><b>Fair benchmark.</b> Every model is compared at the same alert budget (3% of traffic, roughly what an analyst team can review).</li>
+  <li><b>Production-style API</b> (FastAPI + PostgreSQL) with real-time scoring, alert management, feedback, async retraining and model versioning.</li>
+  <li><b>React + TypeScript dashboard</b> with live updates, attack simulation, colour-blind-safe charts and light/dark themes.</li>
+  <li>Dockerised (<code>docker compose up</code>), with automated tests and CI.</li>
+</ul>
+
+<div class="avoid">
+<h2>Results</h2>
+<p>Held-out test window (6,522 transactions, 158 fraudulent), all models compared at the same alert volume:</p>
+<table>
+  <tr><th>Model</th><th class="r">PR-AUC</th><th class="r">Recall @ 3%</th><th class="r">Fraud ring</th><th class="r">Account takeover</th><th class="r">Card testing</th></tr>
+  <tr><td>Standard XGBoost (per-transaction features)</td><td class="r">0.804</td><td class="r">75.3%</td><td class="r">62%</td><td class="r">94%</td><td class="r">100%</td></tr>
+  <tr><td>Isolation Forest (unsupervised)</td><td class="r">0.904</td><td class="r">91.1%</td><td class="r">91%</td><td class="r">69%</td><td class="r">100%</td></tr>
+  <tr><td>GraphSAGE GNN</td><td class="r">0.598</td><td class="r">59.5%</td><td class="r">91%</td><td class="r">6%</td><td class="r">5%</td></tr>
+  <tr><td>XGBoost + graph features</td><td class="r">0.996</td><td class="r">99.4%</td><td class="r">99%</td><td class="r">100%</td><td class="r">100%</td></tr>
+  <tr class="hl"><td>SentinelGraph ensemble</td><td class="r">0.996</td><td class="r">100%</td><td class="r">100%</td><td class="r">100%</td><td class="r">100%</td></tr>
+</table>
+<ul>
+  <li>39 fraudulent transactions ($3.9k) caught that the standard model missed, 38 of them from fraud rings.</li>
+  <li>99% precision and 98% recall at the production alert threshold.</li>
+  <li>Each detector covers different fraud: the GNN excels at rings but is blind to account takeover, and the anomaly detector catches card testing. The ensemble combines their strengths.</li>
+</ul>
+</div>
+<figure><img src="screenshots/07-model-evaluation.png" alt=""><figcaption>Model evaluation: recall by fraud pattern versus the baseline, and the features that drive decisions (mean |SHAP|).</figcaption></figure>
+<p class="note">Benchmarked on a realistic synthetic dataset (≈33k transactions, 2.7k customers) with injected fraud rings, account takeovers and card-testing attacks, plus hard negatives such as families and roommates who legitimately share devices and addresses.</p>
+
+<h2>Tech stack</h2>
+<div class="stack"><span>Python</span><span>XGBoost</span><span>PyTorch Geometric</span><span>NetworkX</span><span>SHAP</span><span>scikit-learn</span><span>FastAPI</span><span>SQLAlchemy</span><span>PostgreSQL</span><span>React</span><span>TypeScript</span><span>Recharts</span><span>Docker</span><span>GitHub Actions</span></div>
+</body>
+</html>
