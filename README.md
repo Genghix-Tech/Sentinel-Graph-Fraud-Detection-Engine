@@ -4,27 +4,42 @@
 
 SentinelGraph doesn't just flag suspicious transactions. It **investigates** the relationships between accounts, devices, IPs, cards and shipping addresses, and explains *why* an event is suspicious: contributing factors, a linked-entity graph, an investigation timeline and a plain-English case narrative. Analyst decisions feed back into the next model version.
 
+![SentinelGraph](docs/screenshots/00-cover.png)
+
 **Stack:** Python · FastAPI · XGBoost · PyTorch Geometric (GraphSAGE) · NetworkX · SHAP · scikit-learn · PostgreSQL · SQLAlchemy · React · TypeScript · Recharts · Docker
 
 ---
 
 ## Results
 
-Evaluated on a held-out time window (the last 20% of 32,869 transactions) at the **same alert volume**, 3% of traffic, which is what an analyst team could realistically review:
+Evaluated on a held-out time window (the last 20% of 32,607 transactions) at the **same alert volume**, 3% of traffic, which is what an analyst team could realistically review:
 
-| Model | PR-AUC | Recall @ 3% | Precision @ 3% | Fraud-ring recall |
-|---|---:|---:|---:|---:|
-| Tabular XGBoost (*ordinary classifier baseline*) | 0.741 | 73.3% | 59.6% | 71.5% |
-| Isolation Forest (unsupervised) | 0.891 | 87.6% | 71.2% | 87.4% |
-| GraphSAGE GNN (account graph) | 0.675 | 87.6% | 71.2% | 92.7% |
-| XGBoost + point-in-time graph features | 0.989 | 100% | 81.3% | 100% |
-| **SentinelGraph ensemble** | **0.997** | **99.4%** | **80.8%** | **99.3%** |
+| Model | PR-AUC | Recall @ 3% | Fraud ring | Account takeover | Card testing |
+|---|---:|---:|---:|---:|---:|
+| Tabular XGBoost (*ordinary classifier baseline*) | 0.804 | 75.3% | 62.0% | 93.8% | 100% |
+| Isolation Forest (unsupervised) | 0.904 | 91.1% | 91.0% | 68.8% | 100% |
+| GraphSAGE GNN (account graph) | 0.598 | 59.5% | 91.0% | 6.2% | 4.8% |
+| XGBoost + point-in-time graph features | 0.996 | 99.4% | 99.0% | 100% | 100% |
+| **SentinelGraph ensemble** | **0.996** | **100%** | **100%** | **100%** | **100%** |
 
-- **42 fraudulent transactions ($3.3k) caught that the tabular baseline missed** at the same alert budget. All of them belonged to fraud rings whose individual purchases look ordinary.
-- Account-takeover recall is 100% for both supervised models (the per-transaction signal is strong). Card testing didn't fall inside the test window for seed 7.
-- The #1 SHAP driver is a graph feature (how tightly clustered accounts' sign-up dates are), and 3 of the top 8 are graph features (plus linked accounts with confirmed fraud and device sharing).
+- **39 fraudulent transactions ($3.9k) caught that the tabular baseline missed** at the same alert budget. 38 of them belonged to fraud rings whose individual purchases look ordinary.
+- At its production threshold the ensemble alerts on 2.4% of traffic with **99.4% precision and 98.1% recall**.
+- The #1 SHAP driver is a graph feature (linked accounts with confirmed fraud), as is #4 (how tightly the cluster's sign-up dates are grouped).
+- Each detector covers a different pattern: the GNN is strong on rings but blind to account takeover, and the anomaly detector catches card testing. The ensemble combines them.
+- Results are fully reproducible: `python -m app.cli seed` with the default seed gives exactly these numbers.
 
 > Data is **synthetic** (see [The data](#the-data)), so absolute numbers are optimistic. The *gap* between the tabular and graph models is the point: the generator deliberately makes fraud rings look normal one transaction at a time.
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Overview](docs/screenshots/01-overview-dashboard.png) **Live fraud operations dashboard** | ![Attack detected](docs/screenshots/02-live-attack-detected.png) **Simulated fraud ring detected in real time** |
+| ![Explainable alert](docs/screenshots/04-explainable-alert.png) **Explainable alert: SHAP factors + case narrative** | ![Entity graph](docs/screenshots/05-linked-entity-graph.png) **New ring linked to 3 known rings via recycled devices** |
+| ![Alert queue](docs/screenshots/03-alert-queue.png) **Alert queue: behavioural vs. graph-driven** | ![Scoring API](docs/screenshots/06-realtime-scoring-api.png) **Real-time scoring API** |
+| ![Evaluation](docs/screenshots/07-model-evaluation.png) **Recall by pattern & SHAP feature importance** | ![Comparison](docs/screenshots/08-model-comparison.png) **5-model benchmark & version history** |
 
 ---
 
@@ -39,7 +54,7 @@ Evaluated on a held-out time window (the last 20% of 32,869 transactions) at the
 | **Linked-entity graph** | Interactive force graph of the account's cluster. Shape and colour encode entity type; confirmed-fraud and alerted accounts are highlighted. |
 | **Analyst feedback loop** | Confirm/dismiss decisions (1) immediately propagate "known fraud" through the live graph, and (2) override chargeback labels in the next retrain, which produces a new, versioned model. |
 | **Live dashboard** | KPIs, alerts by severity, suspected fraud rings, live transaction feed, score distribution. Inject a fraud ring, account takeover or card-testing attack and watch it get caught in real time. |
-| **Real-time scoring API** | `POST /api/transactions` featurises against the live graph, scores, persists and alerts in milliseconds. |
+| **Real-time scoring API** | `POST /api/transactions` featurises against the live graph, scores, persists and alerts with a SHAP explanation in one call (~250 ms end to end on a laptop with SQLite). |
 
 ---
 

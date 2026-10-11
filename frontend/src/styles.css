@@ -186,7 +186,7 @@ tr.click:hover td { background: var(--surface-2); }
 .timeline .t { font-weight: 500; }
 .timeline .d { font-size: 12px; color: var(--text-muted); }
 
-.graph-box { height: 460px; border-radius: 8px; background: var(--surface-2); overflow: hidden; position: relative; }
+.graph-box { height: 520px; border-radius: 8px; background: var(--surface-2); overflow: hidden; position: relative; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin-top: 10px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 10px; height: 10px; display: inline-block; }

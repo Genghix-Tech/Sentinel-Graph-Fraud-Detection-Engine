@@ -116,7 +116,7 @@ export default function Overview() {
                 <XAxis dataKey="label" tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={{ stroke: "var(--axis)" }} tickLine={false} />
                 <YAxis allowDecimals={false} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
                 <Tooltip content={<ChartTip />} cursor={{ fill: "var(--surface-2)" }} />
-                <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 12, color: "var(--text-secondary)" }} />
+                <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 12 }} formatter={(v: string) => <span style={{ color: "var(--text-secondary)" }}>{v}</span>} />
                 {(["medium", "high", "critical"] as const).map((s, i) => (
                   <Bar key={s} dataKey={s} name={titleCase(s)} stackId="a" fill={SEV_COLOR[s]} stroke="var(--surface-1)" strokeWidth={1}
                     radius={i === 2 ? [4, 4, 0, 0] : 0} />

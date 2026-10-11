@@ -66,7 +66,7 @@ def describe(feature: str, value: Optional[float]) -> str:
 
 
 def factor(feature: str, value: Optional[float], contribution: float) -> dict:
-    clean = None if value is None or (isinstance(value, float) and math.isnan(value)) else float(value)
+    clean = None if value is None or (isinstance(value, float) and math.isnan(value)) else round(float(value), 4)
     return {
         "feature": feature,
         "label": FEATURE_LABELS.get(feature, feature),
@@ -95,7 +95,8 @@ def build_narrative(score: float, severity: Optional[str], factors: List[dict], 
     if cluster >= 3:
         shared = [name for name, key in (("device", "device_accounts"), ("card", "card_accounts"),
                                          ("shipping address", "address_accounts")) if (feats.get(key) or 0) >= 2]
-        via = f" through a shared {', '.join(shared)}" if shared else ""
+        joined = ", ".join(shared[:-1]) + " and " + shared[-1] if len(shared) > 1 else "".join(shared)
+        via = f" through a shared {joined}" if shared else ""
         s = f"The account belongs to a {cluster}-account cluster linked{via}"
         young = feats.get("cluster_young_ratio") or 0
         if young >= 0.5:

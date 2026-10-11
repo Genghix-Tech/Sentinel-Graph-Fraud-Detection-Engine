@@ -31,13 +31,13 @@ interface Props {
 export default function EntityGraph({ nodes, edges, onSelect }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const fg = useRef<ForceGraphMethods>();
-  const [width, setWidth] = useState(600);
+  const [size, setSize] = useState({ w: 600, h: 520 });
   const [hover, setHover] = useState<GraphNode | null>(null);
 
   useEffect(() => {
     if (!box.current) return;
-    setWidth(box.current.clientWidth || 600);
-    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    setSize({ w: box.current.clientWidth || 600, h: box.current.clientHeight || 520 });
+    const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(box.current);
     return () => ro.disconnect();
   }, []);
@@ -56,9 +56,16 @@ export default function EntityGraph({ nodes, edges, onSelect }: Props) {
   }, [nodes]);
 
   useEffect(() => {
+    // spread dense clusters so labels stay readable
+    fg.current?.d3Force("charge")?.strength(-45);
+    fg.current?.d3Force("link")?.distance(22);
+    fg.current?.d3ReheatSimulation();
+  }, [data]);
+
+  useEffect(() => {
     const t = setTimeout(() => fg.current?.zoomToFit(400, 40), 700);
     return () => clearTimeout(t);
-  }, [data, width]);
+  }, [data, size]);
 
   return (
     <div>
@@ -66,10 +73,15 @@ export default function EntityGraph({ nodes, edges, onSelect }: Props) {
         <ForceGraph2D
           ref={fg}
           graphData={data}
-          width={width}
-          height={460}
+          width={size.w}
+          height={size.h}
           backgroundColor="rgba(0,0,0,0)"
-          cooldownTicks={120}
+          cooldownTicks={150}
+          onEngineStop={() => {
+            fg.current?.zoomToFit(400, 50);
+            // small clusters would otherwise be blown up to giant shapes
+            setTimeout(() => { if ((fg.current?.zoom() ?? 1) > 2.5) fg.current?.zoom(2.5, 300); }, 450);
+          }}
           linkColor={(l: any) => (l.source?.in_transaction || l.target?.in_transaction) && (l.source?.focus || l.target?.focus) ? colors.primary : colors.link}
           linkWidth={(l: any) => Math.min(4, 0.8 + Math.log2(1 + l.count))}
           onNodeHover={(n: any) => setHover(n ?? null)}
@@ -93,7 +105,11 @@ export default function EntityGraph({ nodes, edges, onSelect }: Props) {
               ctx.strokeStyle = colors.primary;
               ctx.stroke();
             }
-            if (node.kind === "account" || scale > 1.6 || node === hover) {
+            // label only what matters at this zoom; everything else is on hover
+            // (the flagged transaction's own entities are marked by their highlight ring instead)
+            const important = node.focus ||
+              ((node.kind === "device" || node.kind === "address") && (node.shared_by ?? 0) >= 3);
+            if (important || scale > 2.2 || node === hover) {
               ctx.font = `${11 / Math.max(scale, 0.8)}px system-ui, sans-serif`;
               ctx.textAlign = "center";
               ctx.fillStyle = colors.text;

@@ -63,12 +63,12 @@ export default function Models() {
         <Card title="Recall by fraud pattern" sub={`Share of each pattern's test transactions inside the top ${fmtPct(m.alert_budget)} of scores`}>
           <div style={{ height: 280 }}>
             <ResponsiveContainer>
-              <BarChart data={patternData} barGap={2} barCategoryGap="28%">
+              <BarChart data={patternData} barGap={2} barCategoryGap="28%" margin={{ top: 22 }}>
                 <CartesianGrid vertical={false} stroke="var(--grid)" />
                 <XAxis dataKey="pattern" tick={{ fill: "var(--text-secondary)", fontSize: 12 }} axisLine={{ stroke: "var(--axis)" }} tickLine={false} />
-                <YAxis domain={[0, 1]} tickFormatter={(x) => fmtPct(x)} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
+                <YAxis domain={[0, 1]} ticks={[0, 0.25, 0.5, 0.75, 1]} tickFormatter={(x) => fmtPct(x)} tick={{ fill: "var(--text-muted)", fontSize: 11 }} axisLine={false} tickLine={false} width={44} />
                 <Tooltip content={<ChartTip fmt={(x) => fmtPct(x, 1)} />} cursor={{ fill: "var(--surface-2)" }} />
-                <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 12 }} />
+                <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 12 }} formatter={(v: string) => <span style={{ color: "var(--text-secondary)" }}>{v}</span>} />
                 <Bar dataKey="Tabular baseline" fill="var(--series-2)" radius={[4, 4, 0, 0]}>
                   <LabelList dataKey="Tabular baseline" position="top" formatter={(x: number) => fmtPct(x)} style={{ fill: "var(--text-secondary)", fontSize: 11 }} />
                 </Bar>

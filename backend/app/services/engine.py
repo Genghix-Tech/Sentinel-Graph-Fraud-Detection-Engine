@@ -2,7 +2,7 @@
 
 Holds the incrementally-updated entity graph / feature state, the active model bundle and
 the latest GNN account scores. New transactions are featurised against the live graph,
-scored, persisted and (if risky) turned into explained alerts, all in a few milliseconds.
+scored, persisted and (if risky) turned into explained alerts in a single request.
 """
 import logging
 import threading

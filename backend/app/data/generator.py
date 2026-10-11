@@ -361,5 +361,6 @@ class SyntheticWorld:
 
 
 def generate_world(seed: int, end: Optional[datetime] = None, **kwargs) -> Dict[str, pd.DataFrame]:
-    end = end or datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    # anchored to midnight UTC so a given seed always produces the same world
+    end = end or datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     return SyntheticWorld(seed, end).generate(**kwargs)
