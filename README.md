@@ -1,5 +1,12 @@
 # SentinelGraph: AI Fraud & Anomaly Investigation Engine
 
+![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![PyTorch Geometric](https://img.shields.io/badge/PyTorch%20Geometric-GraphSAGE-EE4C2C?logo=pytorch&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-2.1-189FDD)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+
 > **Discover hidden fraud patterns that ordinary transaction classifiers miss.**
 
 SentinelGraph doesn't just flag suspicious transactions. It **investigates** the relationships between accounts, devices, IPs, cards and shipping addresses, and explains *why* an event is suspicious: contributing factors, a linked-entity graph, an investigation timeline and a plain-English case narrative. Analyst decisions feed back into the next model version.
@@ -111,6 +118,11 @@ Injected fraud scenarios:
 ---
 
 ## Quick start
+
+```bash
+git clone https://github.com/Genghix-Tech/Sentinel-Graph-Fraud-Detection-Engine.git
+cd Sentinel-Graph-Fraud-Detection-Engine
+```
 
 ### Option A: Docker (PostgreSQL)
 
