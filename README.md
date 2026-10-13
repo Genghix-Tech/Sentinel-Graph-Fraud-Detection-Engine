@@ -1,5 +1,6 @@
 # SentinelGraph: AI Fraud & Anomaly Investigation Engine
 
+[![CI](https://github.com/Genghix-Tech/Sentinel-Graph-Fraud-Detection-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/Genghix-Tech/Sentinel-Graph-Fraud-Detection-Engine/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![PyTorch Geometric](https://img.shields.io/badge/PyTorch%20Geometric-GraphSAGE-EE4C2C?logo=pytorch&logoColor=white)
